@@ -411,7 +411,7 @@ def generate_plan(
         fallback_models=["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
         messages=[LLMChatMessage(role="system", content=system), LLMChatMessage(role="user", content=user)],
         temperature=0.2,
-        max_tokens=750,
+        max_tokens=1000,
         timeout_s=45,
     )
     plan = _extract_plan(content)
