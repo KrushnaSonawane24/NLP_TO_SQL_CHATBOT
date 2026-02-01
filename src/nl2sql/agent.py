@@ -379,7 +379,7 @@ def generate_plan(
         "- Prefer explicit table qualifiers for ambiguous columns.\n"
         "- For text filters, use case/space-tolerant matching (LOWER(TRIM(col))).\n"
         "- Arithmetic is allowed: +, -, *, /, %, SUM/AVG/MIN/MAX, COUNT, CASE, COALESCE.\n"
-        "- Before any arithmetic or SUM/AVG, ensure operands are numeric. If a value column is TEXT/VARCHAR, cast it (e.g., NULLIF(regexp_replace(col, '[^0-9\\.-]', '', 'g'), '')::numeric).\n"
+        "- CRITICAL: If you need to sum or average a column that is TEXT/VARCHAR in the schema, you MUST cast it to numeric first. Use: SUM(NULLIF(regexp_replace(col, '[^0-9\\.-]', '', 'g'), '')::numeric)\n"
         "- For division, avoid divide-by-zero using NULLIF(denominator, 0).\n"
         "- If the user asks for duplicate values, use GROUP BY ... HAVING COUNT(*) > 1 (and show count).\n"
         "- If the user asks to list all tables/columns, query information_schema (tables/columns) instead of guessing names.\n"
@@ -390,6 +390,7 @@ def generate_plan(
         "- For INSERT/UPDATE/DELETE, prefer RETURNING * so the app can show affected rows.\n"
         "- Complex queries are allowed: joins, CTEs, group by, set operations.\n"
         "- Keep it efficient; add LIMIT for list queries.\n"
+        "- If you encounter an error about 'function sum(text) does not exist', it means you forgot to cast the column to numeric.\n"
     )
 
     identifiers = _schema_identifiers(schema_text)
