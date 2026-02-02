@@ -12,13 +12,13 @@ from faker import Faker
 # Initialize Faker for generating realistic data
 fake = Faker()
 
-# Database configuration
+# Database configuration - Neon Cloud Database
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': 'ep-green-credit-ahv9srb2-pooler.c-3.us-east-1.aws.neon.tech',
     'port': 5432,
-    'user': 'postgres',
-    'password': 'your_password',  # Change this!
-    'database': 'nl2sql_demo'
+    'user': 'neondb_owner',
+    'password': 'npg_H5OTEZLY4WVw',
+    'database': 'neondb'
 }
 
 # Product categories for orders

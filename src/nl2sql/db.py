@@ -30,7 +30,12 @@ class PostgresDB:
     def fetch_schema(self, *, include_system: bool = False) -> str:
         where_system = ""
         if not include_system:
-            where_system = "AND table_schema NOT IN ('pg_catalog', 'information_schema')"
+            # Exclude system schemas AND system tables (those starting with pg_)
+            where_system = """
+            AND table_schema NOT IN ('pg_catalog', 'information_schema')
+            AND table_name NOT LIKE 'pg_%'
+            AND table_name NOT LIKE 'sql_%'
+            """
 
         sql = f"""
         SELECT table_schema, table_name, column_name, data_type
