@@ -10,13 +10,15 @@ import sys
 import streamlit as st
 from dotenv import load_dotenv
 
+# Add src to path (go up 2 levels to project root, then to src)
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "src")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(HERE))
+SRC = os.path.join(PROJECT_ROOT, "src")
 if SRC not in sys.path:
     sys.path.insert(0, SRC)
 
 from nl2sql_langchain.agent_lc import LangChainAgent, NL2SQLError
-from nl2sql.config import load_settings
+from nl2sql.config import load_settings_langchain
 from nl2sql.db import DatabaseError, PostgresDB
 from nl2sql.sql_safety import SQLMode, classify_statement
 
@@ -212,7 +214,7 @@ st.markdown("""
 st.title("Natural Language to SQL Query Assistant")
 st.caption("PostgreSQL Interaction Tool with LangChain Memory")
 
-settings = load_settings()
+settings = load_settings_langchain()  # Using DATABASE_URL_GIS (PostGIS)
 
 with st.sidebar:
     st.subheader("Database Configuration")

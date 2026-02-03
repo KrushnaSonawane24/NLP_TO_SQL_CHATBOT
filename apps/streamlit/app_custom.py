@@ -6,13 +6,15 @@ import sys
 import streamlit as st
 from dotenv import load_dotenv
 
+# Add src to path (go up 2 levels to project root, then to src)
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "src")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(HERE))
+SRC = os.path.join(PROJECT_ROOT, "src")
 if SRC not in sys.path:
     sys.path.insert(0, SRC)
 
 from nl2sql.agent import NL2SQLError, answer_question  # noqa: E402
-from nl2sql.config import load_settings  # noqa: E402
+from nl2sql.config import load_settings_custom  # noqa: E402
 from nl2sql.db import DatabaseError, PostgresDB  # noqa: E402
 from nl2sql.llm_client import LLMError  # noqa: E402
 from nl2sql.sql_safety import SQLMode, classify_statement  # noqa: E402
@@ -24,7 +26,7 @@ st.set_page_config(
     page_title="NL2SQL - PostgreSQL Query Assistant",
     page_icon="⚙️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # ChatGPT-inspired dark theme CSS
@@ -61,18 +63,18 @@ st.markdown("""
         color: #b4b4b4;
     }
     
-    /* Sidebar - ChatGPT style */
+    /* Sidebar */
     [data-testid="stSidebar"] {
-        background-color: #202123;
-        border-right: 1px solid #565869;
+        background-color: #F8F9FA;
+        border-right: 1px solid #E5E7EB;
     }
     
     [data-testid="stSidebar"] * {
-        color: #ececf1 !important;
+        color: #374151 !important; /* Slightly softer text than pure black */
     }
     
     [data-testid="stSidebar"] .stMarkdown {
-        color: #ececf1;
+        color: #374151;
     }
     
     /* Sidebar inputs */
@@ -206,10 +208,18 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("Natural Language to SQL Query Assistant")
-st.caption("PostgreSQL Database Interaction Tool")
+st.title("NL → SQL Assistant")
+st.caption("PostgreSQL Query Tool")
 
-settings = load_settings()
+# Helper section to reduce empty space
+st.markdown("""
+<p style='color: #6B7280; margin-bottom: 2rem;'>
+    Ask questions in plain English. The system will generate safe SQL 
+    and execute it against your PostgreSQL database.
+</p>
+""", unsafe_allow_html=True)
+
+settings = load_settings_custom()  # Using DATABASE_URL_CUSTOMER
 
 with st.sidebar:
     st.subheader("Database Configuration")
@@ -362,8 +372,9 @@ if prompt:
                         results_payload = []
                         for r in exec_resp.results or []:
                             results_payload.append({"rows": r.rows, "meta": f"rowcount: {r.rowcount}"})
-                            st.caption(f"rowcount: {r.rowcount}")
-                            st.dataframe(r.rows, use_container_width=True)
+                            with st.container():
+                                st.caption(f"Result ({r.rowcount} rows)")
+                                st.dataframe(r.rows, use_container_width=True)
                         st.session_state.messages.append(
                             {"role": "assistant", "content": exec_resp.answer, "sql": exec_resp.sql, "results": results_payload}
                         )

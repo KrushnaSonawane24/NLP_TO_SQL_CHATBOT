@@ -37,8 +37,18 @@ class PostgresDB:
             AND table_name NOT LIKE 'sql_%'
             """
 
+        # Enhanced query to detect PostGIS geometry/geography columns
         sql = f"""
-        SELECT table_schema, table_name, column_name, data_type
+        SELECT 
+            table_schema, 
+            table_name, 
+            column_name, 
+            data_type,
+            CASE 
+                WHEN udt_name = 'geometry' THEN 'geometry (PostGIS spatial)'
+                WHEN udt_name = 'geography' THEN 'geography (PostGIS spatial)'
+                ELSE data_type
+            END as enhanced_type
         FROM information_schema.columns
         WHERE 1=1
           {where_system}
@@ -48,19 +58,32 @@ class PostgresDB:
         try:
             with self._connect() as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    # Check if PostGIS is installed
+                    cur.execute("SELECT COUNT(*) as cnt FROM pg_extension WHERE extname = 'postgis'")
+                    postgis_result = cur.fetchone()
+                    has_postgis = postgis_result['cnt'] > 0 if postgis_result else False
+                    
                     cur.execute(sql)
                     rows = cur.fetchall()
         except Exception as e:
             raise DatabaseError(f"Schema fetch failed: {e}") from e
 
         lines: list[str] = []
+        if has_postgis:
+            lines.append("🌍 PostGIS ENABLED - Spatial queries supported\n")
+        
         current_table = None
         for r in rows:
             table = f"{r['table_schema']}.{r['table_name']}"
             if table != current_table:
                 lines.append(f"\nTABLE {table}")
                 current_table = table
-            lines.append(f"  - {r['column_name']} ({r['data_type']})")
+            
+            # Use enhanced type that highlights PostGIS columns
+            column_type = r['enhanced_type']
+            spatial_marker = " 📍" if 'PostGIS' in column_type or column_type in ('geometry', 'geography') else ""
+            lines.append(f"  - {r['column_name']} ({column_type}){spatial_marker}")
+            
         return "\n".join(lines).strip()
 
     def execute_sql(
